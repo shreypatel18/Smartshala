@@ -10,6 +10,7 @@ public class McqTypeQuetion{
     int id;
 
 
+
     String quetion;
 
  String A;

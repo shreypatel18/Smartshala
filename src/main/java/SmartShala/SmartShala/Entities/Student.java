@@ -10,12 +10,25 @@ public class Student {
     @Id
     int studentId;
 
+    String email;
+
     String name;
 
-    @OneToOne(cascade = CascadeType.ALL)
+
+
+    String address;
+
+
+
+    Character gender;
+
+    int age;
+
+
+
+    @OneToOne(cascade = CascadeType.ALL,fetch = FetchType.LAZY)
     Photo photo;
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JsonBackReference
+    @ManyToOne
     Classroom classroom;
 
     public int getStudentId() {
@@ -48,5 +61,38 @@ public class Student {
 
     public void setPhoto(Photo photo) {
         this.photo = photo;
+    }
+
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public Character getGender() {
+        return gender;
+    }
+
+    public void setGender(Character gender) {
+        this.gender = gender;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

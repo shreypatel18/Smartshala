@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class ExcelDataExtractor {
+public class ExcelDataExtractorTeacher {
 
     public static List<Teacher> getListOfTeachers(MultipartFile multipartFile) throws IOException {
 
@@ -27,21 +27,40 @@ public class ExcelDataExtractor {
         Iterator<Row> rowIterator = xssfSheet.iterator();
         while (rowIterator.hasNext()){
             Row row = rowIterator.next();
-            if(rowIdx==0){
-                rowIdx++;
-                continue;
-            }
+
             Teacher temp = new Teacher();
             int cellIdx =0;
             Iterator<Cell> cellIterator = row.iterator();
+
             while (cellIterator.hasNext()){
                 Cell cell = cellIterator.next();
                 switch (cellIdx){
                     case 0:
                         temp.setTeacherId((int) cell.getNumericCellValue());
+                        System.out.println(cell.getNumericCellValue());
                         break;
                     case 1:
                         temp.setName(cell.getStringCellValue());
+                        System.out.println(cell.getStringCellValue());
+                        break;
+                    case 2:
+                        temp.setAddress(cell.getStringCellValue());
+                        System.out.println(cell.getStringCellValue());
+                        break;
+
+                    case 3:
+                        temp.setGender(cell.getStringCellValue().charAt(0));
+                        System.out.println(cell.getStringCellValue());
+                        break;
+
+                    case 4:
+                        temp.setAge((int)cell.getNumericCellValue());
+                        System.out.println(cell.getNumericCellValue());
+                        break;
+
+                    case 5:
+                        temp.setEmail(cell.getStringCellValue());
+                        System.out.println(cell.getStringCellValue());
                         break;
                 }
                 cellIdx++;
