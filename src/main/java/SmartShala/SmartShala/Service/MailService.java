@@ -17,7 +17,7 @@ public class MailService {
             SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
             simpleMailMessage.setTo("shap121815@gmail.com");
             simpleMailMessage.setSubject("hello");
-            simpleMailMessage.setText("hello from shrey");
+            simpleMailMessage.setText(Body);
             javaMailSender.send(simpleMailMessage);
         }catch (Exception e){
 

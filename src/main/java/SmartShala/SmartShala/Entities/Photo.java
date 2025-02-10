@@ -1,20 +1,22 @@
 package SmartShala.SmartShala.Entities;
 
-
 import jakarta.persistence.*;
-import org.springframework.boot.autoconfigure.web.WebProperties;
 
 @Entity
 public class Photo {
 
-
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    int id;
-    String fileType;
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Use IDENTITY for PostgreSQL auto-increment
+    private int id;
 
-    @Lob
-    String base64EncodedPhoto;
+    private String fileType;
+
+    @Lob// Use TEXT instead of CLOB for PostgreSQL
+    private String base64EncodedPhoto;
+
+    public int getId() {
+        return id;
+    }
 
     public String getFileType() {
         return fileType;

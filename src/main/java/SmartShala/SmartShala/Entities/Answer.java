@@ -16,14 +16,15 @@ public class Answer {
      @JsonBackReference
     Test test;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @OrderColumn
     private List<Character> mcqAnswers;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @OrderColumn
     private List<String> theoryAnswers;
 
+    int studentId;
 
     public int getId() {
         return id;
@@ -56,5 +57,13 @@ public class Answer {
 
     public void setTheoryAnswers(List<String> theoryAnswers) {
         this.theoryAnswers = theoryAnswers;
+    }
+
+    public int getStudentId() {
+        return studentId;
+    }
+
+    public void setStudentId(int studentId) {
+        this.studentId = studentId;
     }
 }

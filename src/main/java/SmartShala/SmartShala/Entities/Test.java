@@ -3,7 +3,9 @@ package SmartShala.SmartShala.Entities;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import org.tensorflow.op.math.Sub;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -17,14 +19,24 @@ public class Test{
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "answerkey")
     Answer answerKey;
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "test")
-    List<Answer> answers;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "test", fetch = FetchType.EAGER)
+    List<Answer> answers = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL)
-    List<McqTypeQuetion> mcqs;
+    @OneToOne(cascade = CascadeType.ALL)
+    QuetionPaper quetionPaper;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    List<TheoryQuetion> theoryQuetions;
+
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    List<Result> results = new ArrayList<>();
+
+
+    @ManyToOne
+    Subject subject;
+    String name;
+
+    String status;
+
+
 
     public int getId() {
         return id;
@@ -34,21 +46,6 @@ public class Test{
         this.id = id;
     }
 
-    public List<McqTypeQuetion> getMcqs() {
-        return mcqs;
-    }
-
-    public void setMcqs(List<McqTypeQuetion> mcqs) {
-        this.mcqs = mcqs;
-    }
-
-    public List<TheoryQuetion> getTheoryQuetions() {
-        return theoryQuetions;
-    }
-
-    public void setTheoryQuetions(List<TheoryQuetion> theoryQuetions) {
-        this.theoryQuetions = theoryQuetions;
-    }
 
 
     public List<Answer> getAnswers() {
@@ -65,5 +62,45 @@ public class Test{
 
     public void setAnswerKey(Answer answerKey) {
         this.answerKey = answerKey;
+    }
+
+    public List<Result> getResults() {
+        return results;
+    }
+
+    public void setResults(List<Result> results) {
+        this.results = results;
+    }
+
+    public QuetionPaper getQuetionPaper() {
+        return quetionPaper;
+    }
+
+    public void setQuetionPaper(QuetionPaper quetionPaper) {
+        this.quetionPaper = quetionPaper;
+    }
+
+    public SmartShala.SmartShala.Entities.Subject getSubject() {
+        return subject;
+    }
+
+    public void setSubject(SmartShala.SmartShala.Entities.Subject subject) {
+       this.subject = subject;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
