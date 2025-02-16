@@ -4,26 +4,27 @@ package SmartShala.SmartShala.Entities;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
-@Entity
+
 public class Notice {
 
 
-    String showTo;
-    String Description;
+    String subject;
+    String body;
 
-    public String getShowTo() {
-        return showTo;
+
+    public String getSubject() {
+        return subject;
     }
 
-    public void setShowTo(String showTo) {
-        this.showTo = showTo;
+    public void setSubject(String subject) {
+        this.subject = subject;
     }
 
-    public String getDescription() {
-        return Description;
-    }
-    public void setDescription(String description) {
-        Description = description;
+    public String getBody() {
+        return body;
     }
 
+    public void setBody(String body) {
+        this.body = body;
+    }
 }

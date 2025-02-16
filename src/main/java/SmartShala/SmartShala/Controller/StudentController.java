@@ -35,7 +35,7 @@ public class StudentController {
         return null;
     }
 
-    @GetMapping("submit")
+    @PostMapping("submit")
    Answer submitAnswer(@RequestParam int testId, @RequestBody Answer answer){
        return testService.submitAnswer(testId, answer);
     }

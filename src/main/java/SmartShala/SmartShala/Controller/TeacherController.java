@@ -35,7 +35,9 @@ public class TeacherController {
 //        System.out.println(subCode);
 //        System.out.println(test.getQuetionPaper().getTheoryQuetions());
 //        System.out.println(test.getAnswerKey());
-
+        System.out.println("hello");
+        System.out.println(test.getQuetionPaper().getMcqTypeQuetionList().get(0).getQuetion());
+        System.out.println(test.getQuetionPaper().getMcqTypeQuetionList().get(0).getOptionA());
         return testService.generateTest(test.getQuetionPaper(), test.getAnswerKey(), subCode, test.getName());
 
     }

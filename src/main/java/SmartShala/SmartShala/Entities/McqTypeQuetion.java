@@ -1,5 +1,6 @@
 package SmartShala.SmartShala.Entities;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
 @Entity
@@ -13,13 +14,17 @@ public class McqTypeQuetion{
 
     String quetion;
 
- String A;
- String B;
+    @JsonProperty("A")
+    private String optionA;
 
- String C;
+    @JsonProperty("B")
+    private String optionB;
 
- String D;
+    @JsonProperty("C")
+    private String optionC;
 
+    @JsonProperty("D")
+    private String optionD;
     public int getId() {
         return id;
     }
@@ -36,36 +41,36 @@ public class McqTypeQuetion{
         this.quetion = quetion;
     }
 
-    public String getA() {
-        return A;
+
+    public String getOptionA() {
+        return optionA;
     }
 
-    public void setA(String a) {
-        A = a;
+    public void setOptionA(String optionA) {
+        this.optionA = optionA;
     }
 
-    public String getB() {
-        return B;
+    public String getOptionB() {
+        return optionB;
     }
 
-    public void setB(String b) {
-        B = b;
+    public void setOptionB(String optionB) {
+        this.optionB = optionB;
     }
 
-    public String getC() {
-        return C;
+    public String getOptionC() {
+        return optionC;
     }
 
-    public void setC(String c) {
-        C = c;
+    public void setOptionC(String optionC) {
+        this.optionC = optionC;
     }
 
-    public String getD() {
-        return D;
+    public String getOptionD() {
+        return optionD;
     }
 
-    public void setD(String d) {
-        D = d;
+    public void setOptionD(String optionD) {
+        this.optionD = optionD;
     }
-
 }

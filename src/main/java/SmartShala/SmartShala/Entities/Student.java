@@ -31,6 +31,7 @@ public class Student {
     @ManyToOne
     Classroom classroom;
 
+
     public int getStudentId() {
         return studentId;
     }

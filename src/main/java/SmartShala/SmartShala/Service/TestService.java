@@ -62,6 +62,7 @@ public class TestService {
     }
     public String generateTest(QuetionPaper quetionPaper, Answer answerKey, int subCode,String name) throws IOException {
         Test test = new Test();
+        System.out.println(quetionPaper.getMcqTypeQuetionList().get(0).getOptionA());
         test.setName(name);
         Subject subject = subjectRepository.findById(subCode).get();
         test.setSubject(subject);

@@ -41,6 +41,11 @@ public class AdminController {
     @Autowired
     DTOtraforms dtOtraforms;
 
+    @Autowired
+    NoticeService noticeService;
+
+
+
     @PostMapping(value = "register/teacher", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Teacher registerTeacher(
             @RequestParam("id") int id,
@@ -168,9 +173,27 @@ public class AdminController {
     SubjectRepository subRepository;
 
 
-    @GetMapping("/getAllTeachers")
+    @GetMapping("getAllTeachers")
     public List<TeacherDto> getAllTeacher() {
         return DTOtraforms.getTeacherDtos(adminService.getAllTeachers());
     }
+
+    @GetMapping("sendToClass")
+    public String sendToClassroom(@RequestBody Notice notice, @RequestParam String classname){
+        return noticeService.sendToClass(notice, classname);
+    }
+
+
+    @GetMapping("sendToTeachers")
+    public String sendToTeachers(@RequestBody Notice notice){
+        return noticeService.sendToTeachers(notice);
+    }
+
+    @GetMapping("sendToStudents")
+    public String sendToStudents(@RequestBody Notice notice){
+        return noticeService.sendToStudents(notice);
+    }
+
+
 
 }
