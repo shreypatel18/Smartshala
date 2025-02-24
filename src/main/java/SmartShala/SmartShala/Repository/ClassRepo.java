@@ -9,8 +9,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface ClassRepo extends JpaRepository<Classroom, Integer> {
-
     Optional<Classroom> findByName(String name);
-
-
 }

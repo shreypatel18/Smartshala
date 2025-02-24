@@ -15,27 +15,37 @@ import java.util.Map;
 public class DTOtraforms {
 
     @Autowired
-    SubjectRepository subjectRepository;
+    ClassroomService classroomService;
 
-    public static StudentDto getStudentDto(Student student){
+    public ClassDto getClassroomDto(String name) {
+        Classroom classroom = classroomService.getClassRoomByName(name);
+        ClassDto classDto = new ClassDto();
+        classDto.setStudentDtos(getStudentDto(classroom.getStudents()));
+        classDto.setSubjectDtos(subjectDto(classroom.getSubjects()));
+        return classDto;
+    }
+
+    public static StudentDto getStudentDto(Student student) {
         StudentDto studentDto = new StudentDto();
-        studentDto.setEnrollmentNo(student.getStudentId()) ;
+        studentDto.setEnrollmentNo(student.getStudentId());
         studentDto.setName(student.getName());
+        studentDto.setClassName(student.getClassroom().getName());
+        studentDto.setSubjects(student.getClassroom().getSubjects());
         return studentDto;
     }
 
-    public static TeacherDto getTeacherDto(Teacher teacher){
+    public static TeacherDto getTeacherDto(Teacher teacher) {
         TeacherDto teacherDto = new TeacherDto();
         teacherDto.setTeacherId(teacher.getTeacherId());
         teacherDto.setName(teacher.getName());
         return teacherDto;
     }
 
-    public SubjectDto  subjectDto(Subject subject){
+    public SubjectDto subjectDto(Subject subject) {
         SubjectDto subjectDto = new SubjectDto();
         subjectDto.setSubCode(subject.getSubCode());
         subjectDto.setSubName(subject.getName());
-        if(subject.getTeacher()!=null) {
+        if (subject.getTeacher() != null) {
             subjectDto.setTeacherId(subject.getTeacher().getTeacherId());
 
             subjectDto.setTeacherName(subject.getTeacher().getName());
@@ -44,10 +54,10 @@ public class DTOtraforms {
     }
 
 
-    public static List<StudentDto> getStudentDto(List<Student> student){
+    public static List<StudentDto> getStudentDto(List<Student> student) {
 
         List<StudentDto> list = new ArrayList<>();
-        for(Student student1 : student) {
+        for (Student student1 : student) {
             StudentDto studentDto = new StudentDto();
             studentDto.setEnrollmentNo(student1.getStudentId());
             studentDto.setName(student1.getName());
@@ -57,11 +67,10 @@ public class DTOtraforms {
     }
 
 
-    public static List<TeacherDto> getTeacherDtos(List<Teacher> teachers){
+    public static List<TeacherDto> getTeacherDtos(List<Teacher> teachers) {
 
         List<TeacherDto> teacherDtos = new ArrayList<>();
-
-        for(Teacher teacher: teachers) {
+        for (Teacher teacher : teachers) {
             TeacherDto teacherDto = new TeacherDto();
             teacherDto.setTeacherId(teacher.getTeacherId());
             teacherDto.setName(teacher.getName());
@@ -70,10 +79,10 @@ public class DTOtraforms {
         return teacherDtos;
     }
 
-    public List<SubjectDto>  subjectDto(List<Subject> subjects){
+    public List<SubjectDto> subjectDto(List<Subject> subjects) {
 
         List<SubjectDto> list = new ArrayList<>();
-        for(Subject subject1: subjects) {
+        for (Subject subject1 : subjects) {
             SubjectDto subjectDto = new SubjectDto();
             subjectDto.setSubCode(subject1.getSubCode());
             subjectDto.setSubName(subject1.getName());
@@ -86,10 +95,10 @@ public class DTOtraforms {
         return list;
     }
 
-    public  static List<TestDto> getTestDtos(List<Test> tests){
+    public static List<TestDto> getTestDtos(List<Test> tests) {
 
-        List<TestDto> testDtos =  new ArrayList<>();
-        for(Test test: tests){
+        List<TestDto> testDtos = new ArrayList<>();
+        for (Test test : tests) {
             TestDto testDto = new TestDto();
             testDto.setTestId(test.getId());
             testDto.setTestName(test.getName());
@@ -98,32 +107,34 @@ public class DTOtraforms {
         return testDtos;
     }
 
-    public static Map<String,List<TestDto>> getMapTestDto(List<Test> tests){
-        List<TestDto> testDtosU =  new ArrayList<>();
-        List<TestDto> testDtosA =  new ArrayList<>();
-        List<TestDto> testDtosC =  new ArrayList<>();
+    public static Map<String, List<TestDto>> getMapTestDto(List<Test> tests) {
+
+        List<TestDto> testDtosU = new ArrayList<>();
+        List<TestDto> testDtosA = new ArrayList<>();
+        List<TestDto> testDtosC = new ArrayList<>();
         List<TestDto> testDtosCh = new ArrayList<>();
-        for(Test test: tests){
+
+        for (Test test : tests) {
 
             TestDto testDto = new TestDto();
             testDto.setTestId(test.getId());
             testDto.setTestName(test.getName());
 
-            if(test.getStatus().equals("active")) {
+            if (test.getStatus().equals("active")) {
                 testDtosA.add(testDto);
-            }else if(test.getStatus().equals("complete")) {
+            } else if (test.getStatus().equals("complete")) {
                 testDtosC.add(testDto);
-            }else if(test.getStatus().equals("checked")){
+            } else if (test.getStatus().equals("checked")) {
                 testDtosCh.add(testDto);
-            }else{
+            } else {
                 testDtosU.add(testDto);
             }
         }
-        Map<String , List<TestDto>> testDtoMap = new HashMap<>();
-        testDtoMap.put("upcoming",testDtosU);
-        testDtoMap.put("active",testDtosA);
-        testDtoMap.put("complete",testDtosC);
-        testDtoMap.put("checked",testDtosCh);
+        Map<String, List<TestDto>> testDtoMap = new HashMap<>();
+        testDtoMap.put("upcoming", testDtosU);
+        testDtoMap.put("active", testDtosA);
+        testDtoMap.put("complete", testDtosC);
+        testDtoMap.put("checked", testDtosCh);
         return testDtoMap;
     }
 }

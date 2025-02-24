@@ -6,31 +6,35 @@ import jakarta.persistence.*;
 public class Photo {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Use IDENTITY for PostgreSQL auto-increment
     private int id;
 
     private String fileType;
 
-    @Lob// Use TEXT instead of CLOB for PostgreSQL
+    @Lob
     private String base64EncodedPhoto;
-
-    public int getId() {
-        return id;
-    }
 
     public String getFileType() {
         return fileType;
     }
-
     public void setFileType(String fileType) {
         this.fileType = fileType;
     }
-
     public String getBase64EncodedString() {
         return base64EncodedPhoto;
     }
-
     public void setBase64EncodedString(String base64EncodedPhoto) {
+        this.base64EncodedPhoto = base64EncodedPhoto;
+    }
+    public int getId() {
+        return id;
+    }
+    public void setId(int id) {
+        this.id = id;
+    }
+    public String getBase64EncodedPhoto() {
+        return base64EncodedPhoto;
+    }
+    public void setBase64EncodedPhoto(String base64EncodedPhoto) {
         this.base64EncodedPhoto = base64EncodedPhoto;
     }
 }

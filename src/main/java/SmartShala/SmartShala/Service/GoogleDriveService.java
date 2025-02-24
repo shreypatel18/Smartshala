@@ -1,5 +1,7 @@
 package SmartShala.SmartShala.Service;
 
+import SmartShala.SmartShala.CustomException.GoogleDriveException;
+import SmartShala.SmartShala.CustomException.TestException;
 import SmartShala.SmartShala.Entities.Photo;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.http.HttpRequestInitializer;
@@ -11,47 +13,38 @@ import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.AbstractInputStreamContent;
 import com.google.api.client.http.InputStreamContent;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.*;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class GoogleDriveService {
     private static final String SERVICE_ACCOUNT_KEY_PATH = "C:\\Users\\shreykumar\\Downloads\\smart-class-management-5bc18fcce30f.json";
     private static final String SMARTSHALA_FOLDER_ID = "14dUpmB6TjMoJyudqqCKY1_Qel-gGLktN";
 
-    public static void uploadImages(MultipartFile[] images, String testId, String classroom, String subject, String enrollmentNo) throws IOException {
-        Drive service = getDriveService();
-        String subjectFolderId = findFolderIdByName(service, SMARTSHALA_FOLDER_ID, classroom, enrollmentNo, subject);
-        if (subjectFolderId == null) {
-            System.out.println("⚠️ Subject folder not found!");
-            return;
-        }
-        String testFolderId = createFolder(service, testId, subjectFolderId);
-        for (MultipartFile image : images) {
-            uploadFile(service, image, testFolderId);
-        }
-        System.out.println("✅ Images uploaded successfully to folder: " + testId);
-    }
+    private static final Logger LOGGER = Logger.getLogger(GoogleDriveService.class.getName());
 
+    public static void saveImagesToGoogleDrive(MultipartFile[] images, String className, String subjectCode, String testName, int studentId) {
 
-    public static void saveImagesToGoogleDrive(MultipartFile[] images, String className, String subjectName, String testName, int studentId) throws IOException {
         Drive service = getDriveService();
 
         // Step 1: Find existing Class folder inside "SmartShala"
         String classFolderId = findFolderIdByName(service, SMARTSHALA_FOLDER_ID, className);
         if (classFolderId == null) {
-            throw new IOException("⚠️ Class folder not found: " + className);
+            throw new GoogleDriveException("class folder does not exist for classname " + className);
         }
 
         // Step 2: Find existing Subject folder inside the Class folder
-        String subjectFolderId = findFolderIdByName(service, classFolderId, subjectName);
+        String subjectFolderId = findFolderIdByName(service, classFolderId, subjectCode);
         if (subjectFolderId == null) {
-            throw new IOException("⚠️ Subject folder not found: " + subjectName);
+            throw new GoogleDriveException("subject folder does not exist for subject for code " + subjectCode);
         }
 
         // Step 3: Find existing Test folder inside the Subject folder
         String testFolderId = findFolderIdByName(service, subjectFolderId, testName);
         if (testFolderId == null) {
-            throw new IOException("⚠️ Test folder not found: " + testName);
+            throw new GoogleDriveException("test folder does not exist for test " + testName);
         }
 
         // Step 4: Create a new folder for studentId inside the Test folder
@@ -62,111 +55,117 @@ public class GoogleDriveService {
             uploadFile(service, image, studentFolderId);
         }
 
-        System.out.println("✅ Images uploaded successfully to: SmartShala/" + className + "/" + subjectName + "/" + testName + "/" + studentId);
     }
 
 
+    //returns the drive services
+    private static Drive getDriveService() {
 
 
+        //handles exception if google api key file is not loaded
+        try {
+            //Fetches Credentials and define scope like DRIVE scope means full access to the drive
+            GoogleCredential credential = GoogleCredential.fromStream(new FileInputStream(SERVICE_ACCOUNT_KEY_PATH))
+                    .createScoped(Collections.singleton(DriveScopes.DRIVE));
+            //getTransport to communicate with google servers , json factory to parse json responses from google , and credentials to validate each request
+            return new Drive.Builder(credential.getTransport(), credential.getJsonFactory(), (HttpRequestInitializer) credential)
+                    .setApplicationName("GoogleDriveService")
+                    .build();
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error accessing Google Drive: unable to fetch google api credentials");
+            throw new GoogleDriveException("Unable to process data google drive is not accessible");
+        }
 
-
-    private static Drive getDriveService() throws IOException {
-        GoogleCredential credential = GoogleCredential.fromStream(new FileInputStream(SERVICE_ACCOUNT_KEY_PATH))
-                .createScoped(Collections.singleton(DriveScopes.DRIVE));
-        return new Drive.Builder(credential.getTransport(), credential.getJsonFactory(), (HttpRequestInitializer) credential)
-                .setApplicationName("GoogleDriveService")
-                .build();
     }
 
-    private static String findFolderIdByName(Drive service, String parentFolderId, String... folderNames) throws IOException {
+    private static String findFolderIdByName(Drive service, String parentFolderId, String... folderNames) {
         String currentParentId = parentFolderId;
-        for (String folderName : folderNames) {
-            String query = String.format("'%s' in parents and mimeType='application/vnd.google-apps.folder' and name='%s'", currentParentId, folderName);
-            FileList result = service.files().list().setQ(query).setFields("files(id, name)").execute();
-            List<File> files = result.getFiles();
-            if (files.isEmpty()) return null;
-            currentParentId = files.get(0).getId();
+
+        try {
+            for (String folderName : folderNames) {
+                String query = String.format("'%s' in parents and mimeType='application/vnd.google-apps.folder' and name='%s'", currentParentId, folderName);
+                FileList result = service.files().list().setQ(query).setFields("files(id, name)").execute();
+                List<File> files = result.getFiles();
+                if (files.isEmpty()) return null;
+                currentParentId = files.get(0).getId();
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "unable to find the folder by name in google drive exception occured as: " + e.getMessage());
+            throw new GoogleDriveException("issue in finding the folder in google drive");
         }
         return currentParentId;
+
     }
 
-    private static String createFolder(Drive service, String folderName, String parentFolderId) throws IOException {
+    private static String createFolder(Drive service, String folderName, String parentFolderId) {
         File newFolder = new File();
         newFolder.setName(folderName);
         newFolder.setMimeType("application/vnd.google-apps.folder");
         newFolder.setParents(Collections.singletonList(parentFolderId));
-        return service.files().create(newFolder).setFields("id").execute().getId();
+
+        //handles if any exception in creating folder
+        try {
+            return service.files().create(newFolder).setFields("id").execute().getId();
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Unable to create folder: " + folderName + " exception occured with message " + e.getMessage());
+            throw new GoogleDriveException("Something went wrong Unable to create Google Drive");
+        }
     }
 
-    private static void uploadFile(Drive service, MultipartFile file, String parentFolderId) throws IOException {
+    private static void uploadFile(Drive service, MultipartFile file, String parentFolderId) {
         File driveFile = new File();
         driveFile.setName(file.getOriginalFilename());
         driveFile.setParents(Collections.singletonList(parentFolderId));
-        AbstractInputStreamContent content = new InputStreamContent(file.getContentType(), file.getInputStream());
-        service.files().create(driveFile, content).setFields("id, name").execute();
+        try {
+            AbstractInputStreamContent content = new InputStreamContent(file.getContentType(), file.getInputStream());
+            service.files().create(driveFile, content).setFields("id, name").execute();
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "something went wrong while uploading images message :" + e.getMessage());
+            throw new GoogleDriveException("unable to upload file to google drive something went wrong on server side");
+        }
     }
 
 
-
-
-
-
-    public static String createClassFolder(String className) throws IOException {
+    public static void createClassFolder(String className) {
         Drive service = getDriveService();
-        System.out.println("class folder");
-        return createFolder(service, className, SMARTSHALA_FOLDER_ID);
+        createFolder(service, className, SMARTSHALA_FOLDER_ID);
     }
 
-    public static String createSubjectFolder(String className, String subjectName) throws IOException {
+    public static void createSubjectFolder(String className, String subjectName) throws IOException {
+        Drive service = getDriveService();
+        String classFolderId = findFolderIdByName(service, SMARTSHALA_FOLDER_ID, className);
+        if (classFolderId != null) {
+            createFolder(service, subjectName, classFolderId);
+            return;
+        }
+        throw new GoogleDriveException("class folder for class " + className + " not found");
+    }
+
+
+    public static void createTestFolder(String className, String subjectCode, String testName) {
         Drive service = getDriveService();
         String classFolderId = findFolderIdByName(service, SMARTSHALA_FOLDER_ID, className);
         if (classFolderId == null) {
-            System.out.println("⚠️ Class folder not found! Creating now...");
-            classFolderId = createFolder(service, className, SMARTSHALA_FOLDER_ID);
+            throw new GoogleDriveException("some issue in google drive class folder to store test data not found for class " + className);
         }
-        return createFolder(service, subjectName, classFolderId);
-    }
-
-
-
-
-    public static String createTestFolder(String className, String subjectName, String testName) throws IOException {
-        Drive service = getDriveService();
-
-        // Step 1: Find Class folder (must exist)
-        String classFolderId = findFolderIdByName(service, SMARTSHALA_FOLDER_ID, className);
-        if (classFolderId == null) {
-            throw new IOException("⚠️ Class folder not found: " + className);
-        }
-
-        // Step 2: Find Subject folder (must exist)
-        String subjectFolderId = findFolderIdByName(service, classFolderId, subjectName);
+        String subjectFolderId = findFolderIdByName(service, classFolderId, subjectCode);
         if (subjectFolderId == null) {
-            throw new IOException("⚠️ Subject folder not found: " + subjectName);
+            throw new GoogleDriveException("some issue in google drive Subject folder not found for subject " + subjectCode);
         }
-
-        // Step 3: Create Test folder inside the Subject folder with name = testName
-        String testFolderId = createFolder(service, testName, subjectFolderId);
-
-        System.out.println("✅ Test folder created: SmartShala/" + className + "/" + subjectName + "/" + testName);
-        return testFolderId; // Returns the ID of the created folder
+        createFolder(service, testName, subjectFolderId);
     }
 
-    private static Photo downloadFile(Drive service, String fileId) throws IOException {
+    private static Photo downloadFile(Drive service, String fileId) throws Exception {
         File fileMetadata = service.files().get(fileId).setFields("mimeType").execute();
         String mimeType = fileMetadata.getMimeType();
         Photo photo = new Photo();
         photo.setFileType(mimeType);
-        try (InputStream inputStream = service.files().get(fileId).executeMediaAsInputStream()) {
-            photo.setBase64EncodedString(Base64.getEncoder().encodeToString(inputStream.readAllBytes()));
-            return photo;
-        } catch (GoogleJsonResponseException e) {
-            System.out.println("⚠️ Error downloading file: " + e.getDetails());
-            return null;
-        }
+        InputStream inputStream = service.files().get(fileId).executeMediaAsInputStream();
+        photo.setBase64EncodedString(Base64.getEncoder().encodeToString(inputStream.readAllBytes()));
+        return photo;
     }
 
-    private static List<Photo> fetchJpgFilesAsByteArray(Drive service, String folderId) throws IOException {
+    private static List<Photo> fetchJpgFilesAsByteArray(Drive service, String folderId) throws Exception {
         String query = String.format("'%s' in parents and mimeType='image/jpeg'", folderId);
         FileList result = service.files().list().setQ(query).setFields("files(id, name)").execute();
         List<Photo> imagesArrayList = new ArrayList<>();
@@ -177,23 +176,35 @@ public class GoogleDriveService {
         return imagesArrayList;
     }
 
-    public static List<Photo> get(String className, String subjectName, String testName, int studentId) throws IOException {
+    public static List<Photo> get(String className, String subjectCode, String testName, int studentId) {
         Drive service = getDriveService();
         String classFolderId = findFolderIdByName(service, SMARTSHALA_FOLDER_ID, className);
-        if (classFolderId == null) return new ArrayList<>();
+        if (classFolderId == null) {
+            new GoogleDriveException("unable to find class folder for class: " + className);
+        }
+        String subjectFolderId = findFolderIdByName(service, classFolderId, subjectCode);
 
-        String subjectFolderId = findFolderIdByName(service, classFolderId, subjectName);
-        if (subjectFolderId == null) return new ArrayList<>();
+        if (subjectFolderId == null) {
+            new GoogleDriveException("unable to find subject folder for subject: " + subjectCode);
+        }
 
         String testFolderId = findFolderIdByName(service, subjectFolderId, testName);
-        if (testFolderId == null) return new ArrayList<>();
+        if (testFolderId == null) {
+            new GoogleDriveException("unable to find test folder for test: " + testName);
+        }
 
         String studentFolderId = findFolderIdByName(service, testFolderId, String.valueOf(studentId));
-        if (studentFolderId == null) return new ArrayList<>();
+        if (studentFolderId == null) {
+            new GoogleDriveException("unable to find student folder for student: " + studentId);
+        }
 
-        return fetchJpgFilesAsByteArray(service, studentFolderId);
+        try {
+            return fetchJpgFilesAsByteArray(service, studentFolderId);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "something went wrong while fetching photos message: " + e.getMessage());
+            throw new GoogleDriveException("issue in fetching photos");
+        }
     }
-
 
 
 }

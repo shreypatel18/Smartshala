@@ -1,6 +1,8 @@
 package SmartShala.SmartShala.Service;
 
 
+import SmartShala.SmartShala.CustomException.ClassRoomNotFoundException;
+import SmartShala.SmartShala.CustomException.ClassroomAlreadyRegistered;
 import SmartShala.SmartShala.Entities.Classroom;
 import SmartShala.SmartShala.Repository.ClassRepo;
 import org.checkerframework.checker.units.qual.A;
@@ -17,25 +19,33 @@ public class ClassroomService {
     ClassRepo classRepo;
 
 
-
-    public Classroom getClassRoomById(int id){
+    public Classroom getClassRoomById(int id) {
         return classRepo.findById(id).get();
     }
 
-    public Classroom getClassRoomByName(String name){
+    public Classroom getClassRoomByName(String name) {
+
+        if (!classRepo.findByName(name).isPresent())
+            throw new ClassRoomNotFoundException("classroom " + name + " doesnt exists");
+
         return classRepo.findByName(name).get();
     }
 
-    public Classroom addClassroom(Classroom classroom) throws IOException {
+    public Classroom addClassroom(Classroom classroom) {
+        classroom.setClassId(0);
+        if (classRepo.findByName(classroom.getName()).isPresent()) {
+            throw new ClassroomAlreadyRegistered("classroom with this name already registered");
+        }
         GoogleDriveService.createClassFolder(classroom.getName());
         return classRepo.save(classroom);
     }
 
-    public Classroom updateClassroom(Classroom classroom) throws IOException {
+    public Classroom updateClassroom(Classroom classroom) {
         return classRepo.save(classroom);
     }
 
-    public List<Classroom> getAllClassrooms(){
+    public List<Classroom> getAllClassrooms() {
         return classRepo.findAll();
     }
+
 }

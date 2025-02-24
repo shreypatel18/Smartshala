@@ -9,7 +9,5 @@ import java.util.Optional;
 
 @EnableJpaRepositories
 public interface ResultRepository extends JpaRepository<Result, Integer> {
-
     Optional<Result> findByStudentIdAndTest(int studentId, Test test);
-
 }

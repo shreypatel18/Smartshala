@@ -5,22 +5,25 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class MailService {
 
     @Autowired
     JavaMailSender javaMailSender;
 
-    public void sendMail(String from, String to, String subject, String Body){
+    public boolean sendMail(String to, String subject, String Body) {
 
         try {
             SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
-            simpleMailMessage.setTo("shap121815@gmail.com");
-            simpleMailMessage.setSubject("hello");
-            simpleMailMessage.setText("hello from shrey");
+            simpleMailMessage.setTo(to);
+            simpleMailMessage.setSubject(subject);
+            simpleMailMessage.setText(Body);
             javaMailSender.send(simpleMailMessage);
-        }catch (Exception e){
-
+        } catch (Exception e) {
+            return false;
         }
+        return true;
     }
 }

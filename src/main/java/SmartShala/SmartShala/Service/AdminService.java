@@ -1,104 +1,133 @@
 package SmartShala.SmartShala.Service;
 
 
-import SmartShala.SmartShala.Entities.Classroom;
-import SmartShala.SmartShala.Entities.Student;
-import SmartShala.SmartShala.Entities.Subject;
-import SmartShala.SmartShala.Entities.Teacher;
+import SmartShala.SmartShala.CustomException.ClassRoomNotFoundException;
+import SmartShala.SmartShala.CustomException.EntityAlreadyExists;
+import SmartShala.SmartShala.CustomException.SubjectAlreadyAdded;
+import SmartShala.SmartShala.CustomException.SubjectNotAssigned;
+import SmartShala.SmartShala.Entities.*;
 import SmartShala.SmartShala.Repository.ClassRepo;
 import SmartShala.SmartShala.Repository.StudentRepository;
 import SmartShala.SmartShala.Repository.SubjectRepository;
 import SmartShala.SmartShala.Repository.TeacherRepository;
+import org.apache.commons.compress.harmony.pack200.NewAttribute;
+import org.apache.poi.util.DocumentFormatException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authorization.method.AuthorizeReturnObject;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.tensorflow.op.Op;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
+
 @Service
-public class AdminService{
+public class AdminService {
 
     @Autowired
     StudentRepository studentRepository;
     @Autowired
     SubjectRepository subjectRepository;
-
-    @Autowired
-    ClassRepo classRepo;
-
     @Autowired
     TeacherRepository teacherRepository;
-
     @Autowired
     ClassroomService classroomService;
+    @Autowired
+    PasswordEncoder passwordEncoder;
 
 
-    public Teacher registerTeacher(Teacher teacher){
-
-        return teacherRepository.save(teacher);
+    public Admin getAdmin() {
+        Admin admin = new Admin();
+        admin.setName("admin");
+        admin.setId(1200);
+        admin.setPassword(passwordEncoder.encode("admin123"));
+        return admin;
     }
 
-    public Student registerStudent(Student student){
-        return studentRepository.save(student);
+    public void registerTeacher(Teacher teacher) {
+        teacherRepository.save(teacher);
     }
 
-    public List<Teacher> registerTeachers(List<Teacher> teacher){
-
-        return teacherRepository.saveAll(teacher);
+    public void registerStudent(Student student) {
+        studentRepository.save(student);
     }
 
-    public List<Student> registerStudents(List<Student> students){
-
-        return studentRepository.saveAll(students);
+    public void registerTeachers(List<Teacher> teachers) {
+        for (Teacher teacher : teachers) {
+            if (teacherRepository.existsById(teacher.getTeacherId())) continue;
+            teacherRepository.save(teacher);
+        }
     }
 
-    public  String sendMail(){
+    public void registerStudents(List<Student> students) {
+
+        for (Student student : students) {
+            if (studentRepository.existsById(student.getStudentId())) continue;
+            studentRepository.save(student);
+        }
+    }
+
+    public String sendMail() {
         return "";
     }
 
-    public Subject assign(int subCode, int teacherId,String className){
+    public Subject assign(int subCode, int teacherId, String className) {
 
-            Teacher teacher = teacherRepository.findById(teacherId).get();
-
-     Classroom classroom = classRepo.findByName(className).get();
-     classroom.getTeachers().add(teacher);
-     classRepo.save(classroom);
-
-
-     Subject subject = subjectRepository.findById(subCode).get();
-     subject.setTeacher(teacher);
-     return subjectRepository.save(subject);
+        if (!teacherRepository.existsById(teacherId))
+            throw new SubjectNotAssigned("teacher with id " + teacherId + " does not exist cannot assign subject");
+        Teacher teacher = teacherRepository.findById(teacherId).get();
+        Classroom classroom = classroomService.getClassRoomByName(className);
+        classroom.getTeachers().add(teacher);
+        if (!subjectRepository.existsById(subCode))
+            throw new SubjectNotAssigned("subject with code " + subCode + " does not exist");
+        Subject subject = subjectRepository.findById(subCode).get();
+        subject.setTeacher(teacher);
+        classroomService.updateClassroom(classroom);
+        return subjectRepository.save(subject);
 
     }
 
-    public List<Teacher> getAllTeachers(){
+    public List<Teacher> getAllTeachers() {
         return teacherRepository.findAll();
     }
 
 
     public List<Subject> addSubject(Subject subject, String className) throws IOException {
         Classroom classroom = classroomService.getClassRoomByName(className);
-        Subject subject1 = new Subject();
-        subject1.setName(subject.getName());
-        subject1.setSubCode(subject.getSubCode());
-        boolean subjectExists = classroom.getSubjects().stream()
-                .anyMatch(existingSubject -> existingSubject.getSubCode() == subject1.getSubCode());
-
-        subject1.setClassroom(classroom);
-        // If the subject doesn't exist, add it to the list
-        if (!subjectExists) {
-            classroom.getSubjects().add(subject1);
+        if (subjectRepository.existsById(subject.getSubCode())) {
+            throw new SubjectAlreadyAdded("the subject with code " + subject.getSubCode() + " Already Added");
         }
+        subject.setClassroom(classroom);
+        classroom.getSubjects().add(subject);
+        GoogleDriveService.createSubjectFolder(className, String.valueOf(subject.getSubCode()));
         classroomService.updateClassroom(classroom);
-        GoogleDriveService.createSubjectFolder(className,subject1.getName());
         return classroomService.getClassRoomByName(classroom.getName()).getSubjects();
     }
 
 
+    public void checkIfTeacherAlreadyExists(int id) {
+        if (teacherRepository.existsById(id))
+            throw new EntityAlreadyExists("Teacher with id " + id + " Already Exists");
+    }
+
+    public void checkIfStudentAlreadyExists(int id) {
+        if (studentRepository.existsById(id))
+            throw new EntityAlreadyExists("Student with id " + id + " Already Exists");
+    }
+
+    public void checkContentType(MultipartFile multipartFile) {
+        if (!multipartFile.getContentType().equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
+            throw new DocumentFormatException("only support format is .xlsx your current format is " + multipartFile.getContentType());
+        }
+    }
 
 }

@@ -25,63 +25,63 @@ public class NoticeService {
     StudentRepository studentRepository;
 
 
-   @Autowired
-   ClassroomService classroomService;
+    @Autowired
+    ClassroomService classroomService;
 
-   @Autowired
-   MailService mailService;
+    @Autowired
+    MailService mailService;
 
-   String admin_Mail = "shap121815@gmail.com";
-    public  String sendToEntireSchool(Notice notice){
-    List<String> mails;
-    mails = getMailsTeacher(teacherRepository.findAll());
-    mails.addAll(getMailsStudents(studentRepository.findAll()));
-    sendMails(mails, notice);
-    return "success";
-    }
-    public String sendToTeachers(Notice notice){
+    String admin_Mail = "shap121815@gmail.com";
+
+    public List<String> sendToEntireSchool(Notice notice) {
         List<String> mails;
         mails = getMailsTeacher(teacherRepository.findAll());
-        sendMails(mails, notice);
-        return "success";
+        mails.addAll(getMailsStudents(studentRepository.findAll()));
+        return sendMails(mails, notice);
     }
 
-    public String sendToStudents(Notice notice){
+    public List<String> sendToTeachers(Notice notice) {
+        List<String> mails;
+        mails = getMailsTeacher(teacherRepository.findAll());
+        return sendMails(mails, notice);
+
+    }
+
+    public List<String> sendToStudents(Notice notice) {
         List<String> mails;
         mails = getMailsStudents(studentRepository.findAll());
-        sendMails(mails, notice);
-        return "success";
+        return sendMails(mails, notice);
     }
 
-    public String sendToClass(Notice notice, String name){
+    public List<String> sendToClass(Notice notice, String name) {
         Classroom classroom = classroomService.getClassRoomByName(name);
-        List<String> mails;
-        mails = getMailsTeacher(classroom.getTeachers());
+        List<String> mails = getMailsTeacher(classroom.getTeachers());
         mails.addAll(getMailsStudents(classroom.getStudents()));
-        sendMails(mails, notice);
-        return "success";
+        return sendMails(mails, notice);
+
     }
 
 
-    List<String> getMailsTeacher(List<Teacher> teachers){
+    List<String> getMailsTeacher(List<Teacher> teachers) {
         List<String> mails = new ArrayList<>();
-        teachers.forEach((m)->mails.add(m.getEmail()));
+        teachers.forEach((m) -> mails.add(m.getEmail()));
         return mails;
     }
 
-    List<String> getMailsStudents(List<Student> students){
+    List<String> getMailsStudents(List<Student> students) {
         List<String> mails = new ArrayList<>();
-        students.forEach((m)->mails.add(m.getEmail()));
+        students.forEach((m) -> mails.add(m.getEmail()));
         return mails;
     }
 
-    Boolean sendMails(List<String> mails,Notice notice){
-        mails.forEach(m-> System.out.println(m));
-        System.out.println(notice.getBody());
-        System.out.println(notice.getSubject());
-        mails.forEach(m->mailService.sendMail("",m,notice.getSubject(), notice.getBody()));
-        return true;
-     }
-
-
+    List<String> sendMails(List<String> mails, Notice notice) {
+        List<String> failedToSend = new ArrayList<>();
+        for (String mail : mails) {
+            if (!mailService.sendMail(mail, notice.getSubject(), notice.getBody())) {
+                failedToSend.add(mail);
+            }
+            ;
+        }
+        return failedToSend;
+    }
 }

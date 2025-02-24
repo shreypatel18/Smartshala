@@ -1,16 +1,20 @@
 package SmartShala.SmartShala.Service;
 
+import SmartShala.SmartShala.CustomException.GeminiException;
+import SmartShala.SmartShala.CustomException.TestException;
 import SmartShala.SmartShala.Entities.Answer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.Map;
 
 @Service
-public class AiService{
+public class AiService {
 
 
     @Value("${gemini.api.key}")
@@ -28,9 +32,6 @@ public class AiService{
 
     public String generateReply(String answer, String answerKey) {
         String prompt = getPrompt(answer, answerKey);
-
-
-        // Craft a request
         Map<String, Object> requestBody = Map.of(
                 "contents", new Object[]{
                         Map.of("parts", new Object[]{
@@ -39,14 +40,17 @@ public class AiService{
                 }
         );
 
-        // Do request and get response
         String response = webClient.post()
                 .uri(apiUrl + apiKey)
                 .header("Content-Type", "application/json")
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(String.class)
+                .timeout(Duration.ofSeconds(20))
+                .onErrorResume(e -> Mono.error(new GeminiException("Something went wrong, Unable to process: " + e.getMessage())))
                 .block();
+
+
         return extractResponseContent(response);
     }
 
@@ -62,15 +66,13 @@ public class AiService{
                     .path("text")
                     .asText();
         } catch (Exception e) {
-            return "Error processing request: " + e.getMessage();
+            throw new GeminiException("Something went wrong, unable to process");
         }
-
 
 
     }
 
-    public String getPrompt(String answer, String answerKey){
-
+    public String getPrompt(String answer, String answerKey) {
         StringBuilder prompt = new StringBuilder();
         prompt.append("Here are two answers one is answer key and second is answer given by student");
         prompt.append("answer key is ").append(answerKey);
